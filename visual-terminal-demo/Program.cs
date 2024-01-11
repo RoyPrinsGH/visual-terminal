@@ -10,16 +10,17 @@ namespace VisualTerminalDemo
         }
     }
 
-    class DemoVisualTerminalInstance : VisualTerminalInstance<NativeConsoleMemento>
+    class DemoVisualTerminalInstance : VisualTerminalInstance
     {
-        public DemoVisualTerminalInstance() : base(new NativeConsoleAdapter()) { }
+        public DemoVisualTerminalInstance() : base(new ConsoleWindow())
+        { }
 
         protected override void OnStart()
         {
-            TerminalSettings.SetTitle("Demo Visual Terminal");
-            TerminalSettings.SetWindowSize(80, 25);
-            TerminalSettings.SetForegroundColor(ConsoleColor.Green);
-            TerminalSettings.SetBackgroundColor(ConsoleColor.Black);
+            Window.SetTitle("Demo Visual Terminal");
+
+            Graphics.ForegroundColor = ConsoleColor.Green;
+            Graphics.BackgroundColor = ConsoleColor.Black;
 
             RegisterPeriodicAction(1000, () => { Counter++; Refresh(); });
             RegisterPeriodicAction(1, () => { Graphics.DrawText(0, 1, $"Time: {DateTime.Now.Ticks}"); Refresh(); });

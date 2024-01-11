@@ -1,37 +1,32 @@
 ﻿namespace DeepTek.Visual
 {
-    public interface IMemento<TMemento>
+    public interface IInput
     {
-        TMemento ToMemento();
-        void LoadFromMemento(TMemento memento);
+        ConsoleKeyInfo ReadKey();
+        ConsoleKeyInfo ReadKey(bool intercept);
     }
 
-    public interface IConsoleWriter
+    public interface IConsoleWriter : IMatrixWriter
     {
-        void Write(string text);
-        void WriteLine(string text);
-        void SetCursorPosition(int left, int top);
+        void Flush();
+        void Beep();
+        void Beep(int frequency, int duration);
     }
 
     public interface IConsoleConfigurator
     {
         void SetForegroundColor(ConsoleColor color);
         void SetBackgroundColor(ConsoleColor color);
-        void Clear();
         void ResetColor();
         void SetTitle(string title);
         void SetWindowSize(int width, int height);
-        ConsoleKeyInfo ReadKey();
-        ConsoleKeyInfo ReadKey(bool intercept);
-        void Beep();
-        void Beep(int frequency, int duration);
+        (int width, int height) GetWindowSize();
         void HideCursor();
         void ShowCursor();
-        void Flush();
     }
 
-    public interface IConfigurableConsole<TMemento> : IConsoleConfigurator, IMemento<TMemento> { }
-    public interface IConsole<TMemento> : IConfigurableConsole<TMemento>, IConsoleWriter { }
+    public interface IStatefulConsoleConfigurator : IConsoleConfigurator, IMemento { }
+    public interface IConsole : IStatefulConsoleConfigurator, IConsoleWriter, IInput { }
 
     public class NativeConsoleMemento(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string title, int windowWidth, int windowHeight, bool cursorVisible)
     {
@@ -43,8 +38,11 @@
         public bool CursorVisible { get; init; } = cursorVisible;
     }
 
-    public class NativeConsoleAdapter : IConsole<NativeConsoleMemento>
+    public class NativeConsoleAdapter : IConsole
     {
+        public uint Width => (uint)Console.WindowWidth;
+        public uint Height => (uint)Console.WindowHeight;
+
         public void Write(string text)
         {
             Console.Write(text);
@@ -91,6 +89,11 @@
             Console.WindowHeight = height;
         }
 
+        public (int width, int height) GetWindowSize()
+        {
+            return (Console.WindowWidth, Console.WindowHeight);
+        }
+
         public ConsoleKeyInfo ReadKey()
         {
             return Console.ReadKey();
@@ -124,7 +127,7 @@
             Console.CursorVisible = true;
         }
 
-        public NativeConsoleMemento ToMemento()
+        public object ToMemento()
         {
             if (OperatingSystem.IsWindows())
             {
@@ -136,14 +139,17 @@
             }
         }
 
-        public void LoadFromMemento(NativeConsoleMemento memento)
+        public void LoadFromMemento(object memento)
         {
-            Console.ForegroundColor = memento.ForegroundColor;
-            Console.BackgroundColor = memento.BackgroundColor;
-            Console.Title = memento.Title;
-            Console.WindowWidth = memento.WindowWidth;
-            Console.WindowHeight = memento.WindowHeight;
-            Console.CursorVisible = memento.CursorVisible;
+            if (memento is NativeConsoleMemento m)
+            {
+                Console.ForegroundColor = m.ForegroundColor;
+                Console.BackgroundColor = m.BackgroundColor;
+                Console.Title = m.Title;
+                Console.WindowWidth = m.WindowWidth;
+                Console.WindowHeight = m.WindowHeight;
+                Console.CursorVisible = m.CursorVisible;
+            }
         }
 
         public void Flush()

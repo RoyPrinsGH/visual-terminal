@@ -2,13 +2,10 @@ using System.Diagnostics;
 
 namespace DeepTek.Visual
 {
-    public abstract class VisualTerminalInstance<TConsoleMemento>(IConsole<TConsoleMemento> console)
+    public abstract class VisualTerminalInstance(IMatrixWindow window)
     {
-        private readonly IConsole<TConsoleMemento> _terminal = console;
-        protected IConsoleConfigurator TerminalSettings => _terminal;
-
-        private ScreenCanvas Canvas { get; init; } = new ScreenCanvas((uint)Console.WindowWidth, (uint)Console.WindowHeight);
-        protected Graphics Graphics => new(Canvas);
+        protected readonly IMatrixWindow Window = window;
+        protected IMatrixGraphics Graphics => Window.Graphics;
 
         private bool KeyListenerEventsActive { get; set; }
         public bool IsActive { get; protected set; }
@@ -38,13 +35,10 @@ namespace DeepTek.Visual
         {
             IsActive = true;
             KeyListenerEventsActive = true;
-
-            TerminalSettings.Clear();
-            TerminalSettings.HideCursor();
-
+            Graphics.Clear();
+            Window.HideCursor();
             StartKeyListenerThread();
             StartPeriodicBlockingActionsHandlerThread();
-
             OnStart();
         }
 
@@ -75,10 +69,8 @@ namespace DeepTek.Visual
         {
             IsActive = false;
             KeyListenerEventsActive = false;
-
-            TerminalSettings.Clear();
-            TerminalSettings.ShowCursor();
-
+            Graphics.Clear();
+            Window.ShowCursor();
             OnStop();
         }
 
@@ -113,7 +105,7 @@ namespace DeepTek.Visual
 
         public void Start()
         {
-            TConsoleMemento preRunState = _terminal.ToMemento();
+            object preRunState = Window.ToMemento();
             PrepareStart();
             try
             {
@@ -121,11 +113,7 @@ namespace DeepTek.Visual
                 while (IsActive)
                 {
                     OnRefresh();
-
-                    Canvas.Draw(_terminal);
-                    Canvas.Commit();
-
-                    TerminalSettings.Flush();
+                    Graphics.Update();
 
                     if (!IsActive) break;
 
@@ -141,7 +129,7 @@ namespace DeepTek.Visual
             finally
             {
                 PrepareStop();
-                _terminal.LoadFromMemento(preRunState);
+                Window.LoadFromMemento(preRunState);
             }
         }
 
@@ -149,11 +137,11 @@ namespace DeepTek.Visual
         {
             Thread keyListenerThread = new(() =>
             {
-                ConsoleKeyInfo key = TerminalSettings.ReadKey(true);
+                ConsoleKeyInfo key = Window.ReadKey();
                 while (KeyListenerEventsActive)
                 {
                     OnKeyPress(key);
-                    key = TerminalSettings.ReadKey(true);
+                    key = Window.ReadKey();
                 }
             })
             {
