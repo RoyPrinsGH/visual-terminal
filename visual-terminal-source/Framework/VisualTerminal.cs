@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using DeepTek.VisualTerminalFramework.Abstractions;
+using DeepTek.VisualTerminalFramework.Console.Graphics;
 
 namespace DeepTek.VisualTerminalFramework
 {

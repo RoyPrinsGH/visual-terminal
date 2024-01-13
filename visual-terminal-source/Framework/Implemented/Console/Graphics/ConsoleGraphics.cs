@@ -5,7 +5,12 @@ namespace DeepTek.VisualTerminalFramework.Console.Graphics
     public class ConsoleGraphics(IMatrixCanvas<CanvasPosition, PixelInfo> canvas)
         : IMatrixGraphics<CanvasPosition, PixelInfo>
     {
-        private IMatrixCanvas<CanvasPosition, PixelInfo> Canvas { get; init; } = canvas;
+        public IMatrixCanvas<CanvasPosition, PixelInfo> Canvas { get; init; } = canvas;
+
+        public void SetDefaultColor(PixelInfo pixelData)
+        {
+            Canvas.SetDefaultColor(pixelData);
+        }
 
         public void Clear()
         {
@@ -60,7 +65,7 @@ namespace DeepTek.VisualTerminalFramework.Console.Graphics
         {
             foreach (char c in text)
             {
-                pixelData.Value = c;
+                pixelData.Value = c == ' ' ? ' ' : c;
                 SetPixel(position, pixelData);
                 position.X++;
             }

@@ -4,6 +4,28 @@ namespace DeepTek.VisualTerminalFramework.Console
 {
     public class NativeVisualTerminal : VisualTerminal<CanvasPosition, PixelInfo>
     {
-        public NativeVisualTerminal() : base(new ConsoleWindow()) { }
+        public NativeVisualTerminal() : base(new ConsoleWindow())
+        {
+            OnStop += (sender, args) =>
+            {
+                System.Console.ResetColor();
+                System.Console.Clear();
+                System.Console.CursorVisible = true;
+            };
+
+            OnRefresh += (sender, args) =>
+            {
+                Objects.ForEach(o =>
+                {
+                    if (o is IReceiveEngineStats engineStats)
+                    {
+                        var canvas = (ConsoleCanvas)((ConsoleGraphics)Graphics).Canvas;
+                        engineStats.BufferUpdateCount = canvas.BufferUpdateCount;
+                        engineStats.PreviousBufferUpdateCount = canvas.ActualUpdateCount;
+                        engineStats.WriteFrameTime = canvas.WriteFrameTime;
+                    }
+                });
+            };
+        }
     }
 }
