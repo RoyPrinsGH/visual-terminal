@@ -2,6 +2,7 @@ namespace DeepTek.VisualTerminalFramework.Abstractions
 {
     public interface IMatrixGraphics<in TPosition, in TPixelData>
     {
+        void Reset();
         void Clear();
         void SetDefaultColor(TPixelData pixelData);
         void SetPixel(TPosition position, TPixelData pixelData);

@@ -42,6 +42,13 @@ namespace DeepTek.VisualTerminalFramework.Console.Graphics
             UpdateBuffer[position] = pixelInfo;
         }
 
+        public void Reset()
+        {
+            matrixWriter.Clear();
+            Buffer.Clear();
+            UpdateBuffer.Clear();
+        }
+
         public void Clear()
         {
             UpdateBuffer.Clear();

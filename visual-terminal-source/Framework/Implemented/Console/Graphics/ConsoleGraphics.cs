@@ -12,6 +12,11 @@ namespace DeepTek.VisualTerminalFramework.Console.Graphics
             Canvas.SetDefaultColor(pixelData);
         }
 
+        public void Reset()
+        {
+            Canvas.Reset();
+        }
+
         public void Clear()
         {
             Canvas.Clear();

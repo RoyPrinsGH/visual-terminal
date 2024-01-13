@@ -9,6 +9,9 @@ namespace DeepTek.VisualTerminalFramework
         public readonly IMatrixWindow<TPixelPosition, TPixelData> Window = window;
         public IMatrixGraphics<TPixelPosition, TPixelData> Graphics => Window.Graphics;
 
+        private uint RegisteredWidth { get; set; }
+        private uint RegisteredHeight { get; set; }
+
         public bool IsActive { get; private set; }
 
         private bool KeyListenerEventsActive { get; set; }
@@ -41,6 +44,8 @@ namespace DeepTek.VisualTerminalFramework
             Window.HideCursor();
             StartKeyListenerThread();
             StartPeriodicActionsRunnerThread();
+            RegisteredWidth = Window.Width;
+            RegisteredHeight = Window.Height;
             OnStart?.Invoke(this, EventArgs.Empty);
         }
 
@@ -124,6 +129,13 @@ namespace DeepTek.VisualTerminalFramework
                     });
 
                     Graphics.RenderToScreen();
+
+                    if (Window.Width != RegisteredWidth || Window.Height != RegisteredHeight)
+                    {
+                        Graphics.Reset();
+                        RegisteredWidth = Window.Width;
+                        RegisteredHeight = Window.Height;
+                    }
 
                     if (!IsActive) break;
 

@@ -4,6 +4,7 @@ namespace DeepTek.VisualTerminalFramework.Abstractions
     {
         void SetDefaultColor(TPixelData pixelData);
         void SetPixel(TPosition position, TPixelData pixelData);
+        void Reset();
         void Clear();
         void RenderToWriter();
     }
