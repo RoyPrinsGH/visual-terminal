@@ -3,7 +3,7 @@ using DeepTek.VisualTerminalFramework.Abstractions;
 
 namespace DeepTek.VisualTerminalFramework
 {
-    public sealed class VisualTerminal<TPixelPosition, TPixelData>(IMatrixWindow<TPixelPosition, TPixelData> window)
+    public class VisualTerminal<TPixelPosition, TPixelData>(IMatrixWindow<TPixelPosition, TPixelData> window)
     {
         public readonly IMatrixWindow<TPixelPosition, TPixelData> Window = window;
         public IMatrixGraphics<TPixelPosition, TPixelData> Graphics => Window.Graphics;

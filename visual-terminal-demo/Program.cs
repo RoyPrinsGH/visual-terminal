@@ -1,5 +1,4 @@
-﻿using DeepTek.VisualTerminalFramework;
-using DeepTek.VisualTerminalFramework.Console.Graphics;
+﻿using DeepTek.VisualTerminalFramework.Console;
 using DeepTek.VisualTerminalFramework.Console.Graphics.Objects;
 
 namespace VisualTerminalDemo
@@ -7,7 +6,7 @@ namespace VisualTerminalDemo
     public class PressCounterText : Text
     {
         private uint Counter = 0;
-        public PressCounterText(VisualTerminal<CanvasPosition, PixelInfo> terminal)
+        public PressCounterText(NativeVisualTerminal terminal)
         {
             Value = "Press spacebar to increase counter";
 
@@ -24,7 +23,7 @@ namespace VisualTerminalDemo
     {
         public static void Run()
         {
-            VisualTerminal<CanvasPosition, PixelInfo> terminal = new(new ConsoleWindow());
+            NativeVisualTerminal terminal = new();
             terminal.Window.SetTitle("Visual Terminal Demo");
 
             PressCounterText pct = new(terminal);
