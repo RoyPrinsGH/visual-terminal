@@ -44,6 +44,8 @@ namespace DeepTek.VisualTerminalFramework.Console.Graphics
 
         public void Reset()
         {
+            matrixWriter.SetForegroundColor(DefaultForegroundColor);
+            matrixWriter.SetBackgroundColor(DefaultBackgroundColor);
             matrixWriter.Clear();
             Buffer.Clear();
             UpdateBuffer.Clear();
