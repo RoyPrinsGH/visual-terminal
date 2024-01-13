@@ -1,2 +1,2 @@
 global using Xunit;
-global using DeepTek.Visual;
+global using DeepTek.VisualTerminalFramework;

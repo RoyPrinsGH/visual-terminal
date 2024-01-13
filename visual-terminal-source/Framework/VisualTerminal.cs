@@ -1,21 +1,22 @@
 using System.Diagnostics;
+using DeepTek.VisualTerminalFramework.Abstractions;
 
-namespace DeepTek.Visual
+namespace DeepTek.VisualTerminalFramework
 {
-    public abstract class VisualTerminalInstance(IMatrixWindow window)
+    public sealed class VisualTerminal<TPixelPosition, TPixelData>(IMatrixWindow<TPixelPosition, TPixelData> window)
     {
-        protected readonly IMatrixWindow Window = window;
-        protected IMatrixGraphics Graphics => Window.Graphics;
+        public readonly IMatrixWindow<TPixelPosition, TPixelData> Window = window;
+        public IMatrixGraphics<TPixelPosition, TPixelData> Graphics => Window.Graphics;
+
+        public bool IsActive { get; private set; }
 
         private bool KeyListenerEventsActive { get; set; }
-        public bool IsActive { get; protected set; }
         private object MonitorPadLock { get; init; } = new object();
 
-        protected abstract void OnRefresh();
-
-        protected virtual void OnStart() { }
-        protected virtual void OnStop() { }
-        protected virtual void OnKeyPress(ConsoleKeyInfo key) { }
+        public event EventHandler OnRefresh = delegate { };
+        public event EventHandler OnStart = delegate { };
+        public event EventHandler OnStop = delegate { };
+        public event EventHandler<ConsoleKeyInfo> OnKeyPress = delegate { };
 
         public void Refresh()
         {
@@ -38,11 +39,11 @@ namespace DeepTek.Visual
             Graphics.Clear();
             Window.HideCursor();
             StartKeyListenerThread();
-            StartPeriodicBlockingActionsHandlerThread();
-            OnStart();
+            StartPeriodicActionsRunnerThread();
+            OnStart?.Invoke(this, EventArgs.Empty);
         }
 
-        private Thread StartPeriodicBlockingActionsHandlerThread()
+        private Thread StartPeriodicActionsRunnerThread()
         {
             Thread thread = new(() =>
             {
@@ -71,12 +72,12 @@ namespace DeepTek.Visual
             KeyListenerEventsActive = false;
             Graphics.Clear();
             Window.ShowCursor();
-            OnStop();
+            OnStop?.Invoke(this, EventArgs.Empty);
         }
 
-        private List<Thread> PeriodicActionThreads { get; init; } = [];
+        private List<Thread> PeriodicActionThreads { get; init; } = new List<Thread>();
 
-        protected void RegisterPeriodicActionOnSeparateThread(int milliseconds, Action action)
+        public void RegisterPeriodicActionOnSeparateThread(int milliseconds, Action action)
         {
             Thread periodicActionThread = new(() =>
             {
@@ -95,7 +96,7 @@ namespace DeepTek.Visual
 
         private List<(Stopwatch, int, Action)> PeriodicActions { get; init; } = [];
 
-        protected void RegisterPeriodicAction(int milliseconds, Action action)
+        public void RegisterPeriodicAction(int milliseconds, Action action)
         {
             lock (PeriodicActions)
             {
@@ -103,17 +104,25 @@ namespace DeepTek.Visual
             }
         }
 
+        public List<IGraphicsObject<TPixelPosition, TPixelData>> Objects { get; init; } = [];
+
         public void Start()
         {
-            object preRunState = Window.ToMemento();
+            if (IsActive) throw new InvalidOperationException("VisualTerminal is already active.");
             PrepareStart();
             try
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 while (IsActive)
                 {
-                    OnRefresh();
-                    Graphics.Update();
+                    OnRefresh?.Invoke(this, EventArgs.Empty);
+
+                    Objects.ForEach(graphicsObject =>
+                    {
+                        graphicsObject.Render(Graphics);
+                    });
+
+                    Graphics.RenderToScreen();
 
                     if (!IsActive) break;
 
@@ -129,8 +138,14 @@ namespace DeepTek.Visual
             finally
             {
                 PrepareStop();
-                Window.LoadFromMemento(preRunState);
             }
+        }
+
+        private List<(ConsoleKey, Action)> KeyPressActions { get; init; } = [];
+
+        public void RegisterKeyPressAction(ConsoleKey key, Action action)
+        {
+            KeyPressActions.Add((key, action));
         }
 
         private Thread StartKeyListenerThread()
@@ -140,7 +155,14 @@ namespace DeepTek.Visual
                 ConsoleKeyInfo key = Window.ReadKey();
                 while (KeyListenerEventsActive)
                 {
-                    OnKeyPress(key);
+                    OnKeyPress?.Invoke(this, key);
+                    KeyPressActions.ForEach(((ConsoleKey key, Action action) keyAction) =>
+                    {
+                        if (keyAction.key == key.Key)
+                        {
+                            keyAction.action();
+                        }
+                    });
                     key = Window.ReadKey();
                 }
             })

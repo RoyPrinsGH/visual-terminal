@@ -1,48 +1,38 @@
-﻿using DeepTek.Visual;
+﻿using DeepTek.VisualTerminalFramework;
+using DeepTek.VisualTerminalFramework.Console.Graphics;
+using DeepTek.VisualTerminalFramework.Console.Graphics.Objects;
 
 namespace VisualTerminalDemo
 {
+    public class PressCounterText : Text
+    {
+        private uint Counter = 0;
+        public PressCounterText(VisualTerminal<CanvasPosition, PixelInfo> terminal)
+        {
+            Value = "Press spacebar to increase counter";
+
+            terminal.RegisterKeyPressAction(ConsoleKey.Spacebar, () =>
+            {
+                Counter++;
+                Value = $"Spacebar pressed {Counter} times";
+                X = (X + 1) % terminal.Window.Width;
+                terminal.Refresh();
+            });
+        }
+    }
     static class DemoVisualTerminal
     {
         public static void Run()
         {
-            new DemoVisualTerminalInstance().Start();
-        }
-    }
+            VisualTerminal<CanvasPosition, PixelInfo> terminal = new(new ConsoleWindow());
+            terminal.Window.SetTitle("Visual Terminal Demo");
 
-    class DemoVisualTerminalInstance : VisualTerminalInstance
-    {
-        public DemoVisualTerminalInstance() : base(new ConsoleWindow())
-        { }
+            PressCounterText pct = new(terminal);
+            terminal.Objects.Add(pct);
+            terminal.RegisterPeriodicAction(100, () => { pct.X = (pct.X + 1) % terminal.Window.Width; terminal.Refresh(); });
 
-        protected override void OnStart()
-        {
-            Window.SetTitle("Demo Visual Terminal");
-
-            Graphics.ForegroundColor = ConsoleColor.Green;
-            Graphics.BackgroundColor = ConsoleColor.Black;
-
-            RegisterPeriodicAction(1000, () => { Counter++; Refresh(); });
-            RegisterPeriodicAction(1, () => { Graphics.DrawText(0, 1, $"Time: {DateTime.Now.Ticks}"); Refresh(); });
-        }
-
-        private int Counter = 0;
-        protected override void OnRefresh()
-        {
-            Graphics.DrawText(0, 0, $"Press ESC to exit, or P to refresh ({Counter})\n");
-        }
-
-        protected override void OnKeyPress(ConsoleKeyInfo key)
-        {
-            if (key.Key == ConsoleKey.Escape)
-            {
-                Stop();
-            }
-            if (key.Key == ConsoleKey.P)
-            {
-                Counter++;
-                Refresh();
-            }
+            terminal.RegisterKeyPressAction(ConsoleKey.Escape, terminal.Stop);
+            terminal.Start();
         }
     }
 
