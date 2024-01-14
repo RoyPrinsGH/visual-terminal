@@ -9,6 +9,7 @@ namespace VisualTerminalDemo
     public class ScrollingPressCounterText : Text, IInstallableComponent<CanvasPosition, PixelInfo>
     {
         private uint Counter = 0;
+        public int ScrollDirection { get; set; } = 1;
         public void Install(VisualTerminal<CanvasPosition, PixelInfo> terminal)
         {
             terminal.Objects.Add(this);
@@ -24,7 +25,7 @@ namespace VisualTerminalDemo
 
             terminal.RegisterPeriodicAction(100, () =>
             {
-                X = (X + 1) % terminal.Window.Width;
+                X = (uint)((terminal.Window.Width + (int)X + ScrollDirection) % terminal.Window.Width);
                 terminal.Refresh();
             });
         }
@@ -36,13 +37,24 @@ namespace VisualTerminalDemo
         {
             var es = new EngineStats() { Color = ConsoleColor.DarkBlue };
             yield return es;
-            yield return new ScrollingPressCounterText() { X = 0, Y = 4, TextColor = ConsoleColor.Green };
-            var menu = new Menu() { X = 0, Y = terminal.Window.Height - 4, Width = 25, Options = ["Toggle enginestats", "---", "---"], HasFocus = true };
+
+            var spct = new ScrollingPressCounterText() { X = 0, Y = 4, TextColor = ConsoleColor.Green };
+            yield return spct;
+
+            var menu = new Menu() { X = 0, Y = terminal.Window.Height - 4, Width = 25, Options = ["Toggle enginestats", "Change scroll direction", "Exit"], HasFocus = true };
             menu.OnSelectionConfirmed += (sender, index) =>
             {
                 if (index == 0)
                 {
                     es.Visible = !es.Visible;
+                }
+                else if (index == 1)
+                {
+                    spct.ScrollDirection *= -1;
+                }
+                else if (index == 2)
+                {
+                    terminal.Stop();
                 }
             };
             yield return menu;
