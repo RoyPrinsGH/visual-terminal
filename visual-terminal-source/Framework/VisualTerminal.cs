@@ -20,6 +20,7 @@ namespace DeepTek.VisualTerminalFramework
         public event EventHandler OnRefresh = delegate { };
         public event EventHandler OnStart = delegate { };
         public event EventHandler OnStop = delegate { };
+        public event EventHandler<(uint, uint)> OnResize = delegate { };
         public event EventHandler<ConsoleKeyInfo> OnKeyPress = delegate { };
 
         public void Refresh()
@@ -46,6 +47,7 @@ namespace DeepTek.VisualTerminalFramework
             StartPeriodicActionsRunnerThread();
             RegisteredWidth = Window.Width;
             RegisteredHeight = Window.Height;
+            RegisterPeriodicAction(50, CheckForResize);
             OnStart?.Invoke(this, EventArgs.Empty);
         }
 
@@ -81,25 +83,6 @@ namespace DeepTek.VisualTerminalFramework
             OnStop?.Invoke(this, EventArgs.Empty);
         }
 
-        private List<Thread> PeriodicActionThreads { get; init; } = new List<Thread>();
-
-        public void RegisterPeriodicActionOnSeparateThread(int milliseconds, Action action)
-        {
-            Thread periodicActionThread = new(() =>
-            {
-                while (IsActive)
-                {
-                    Thread.Sleep(milliseconds);
-                    action();
-                }
-            })
-            {
-                IsBackground = true
-            };
-            periodicActionThread.Start();
-            PeriodicActionThreads.Add(periodicActionThread);
-        }
-
         private List<(Stopwatch, int, Action)> PeriodicActions { get; init; } = [];
 
         public void RegisterPeriodicAction(int milliseconds, Action action)
@@ -107,6 +90,23 @@ namespace DeepTek.VisualTerminalFramework
             lock (PeriodicActions)
             {
                 PeriodicActions.Add((Stopwatch.StartNew(), milliseconds, action));
+            }
+        }
+
+        public void InstallAll(IEnumerable<IInstallableComponent<TPixelPosition, TPixelData>> components)
+        {
+            components.ToList().ForEach(component => component.Install(this));
+        }
+
+        private void CheckForResize()
+        {
+            if (Window.Width != RegisteredWidth || Window.Height != RegisteredHeight)
+            {
+                Graphics.Reset();
+                RegisteredWidth = Window.Width;
+                RegisteredHeight = Window.Height;
+                OnResize?.Invoke(this, (RegisteredWidth, RegisteredHeight));
+                Refresh();
             }
         }
 
@@ -129,13 +129,6 @@ namespace DeepTek.VisualTerminalFramework
                     });
 
                     Graphics.RenderToScreen();
-
-                    if (Window.Width != RegisteredWidth || Window.Height != RegisteredHeight)
-                    {
-                        Graphics.Reset();
-                        RegisteredWidth = Window.Width;
-                        RegisteredHeight = Window.Height;
-                    }
 
                     if (!IsActive) break;
 

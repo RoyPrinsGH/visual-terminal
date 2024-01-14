@@ -13,18 +13,20 @@ namespace DeepTek.VisualTerminalFramework.Console.Graphics.Objects
         ConsoleColor backgroundColor = ConsoleColor.Black,
         bool isFilled = true) : IGraphicsObject<CanvasPosition, PixelInfo>
     {
-        public uint X = x;
-        public uint Y = y;
-        public uint Width = width;
-        public uint Height = height;
-        public uint LayerIndex = layerIndex;
-        public char Character = character;
-        public ConsoleColor ForegroundColor = foregroundColor;
-        public ConsoleColor BackgroundColor = backgroundColor;
-        public bool IsFilled = isFilled;
+        public uint X { get; set; } = x;
+        public uint Y { get; set; } = y;
+        public uint Width { get; set; } = width;
+        public uint Height { get; set; } = height;
+        public uint LayerIndex { get; set; } = layerIndex;
+        public char Character { get; set; } = character;
+        public ConsoleColor ForegroundColor { get; set; } = foregroundColor;
+        public ConsoleColor BackgroundColor { get; set; } = backgroundColor;
+        public bool IsFilled { get; set; } = isFilled;
+        public bool Visible { get; set; } = true;
 
         public virtual void Render(IMatrixGraphics<CanvasPosition, PixelInfo> graphics)
         {
+            if (!Visible) return;
             if (IsFilled)
             {
                 for (uint x = 0; x < Width; x++)

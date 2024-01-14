@@ -20,9 +20,7 @@ namespace DeepTek.VisualTerminalFramework.Console
                     if (o is IReceiveEngineStats engineStats)
                     {
                         var canvas = (ConsoleCanvas)((ConsoleGraphics)Graphics).Canvas;
-                        engineStats.BufferUpdateCount = canvas.BufferUpdateCount;
-                        engineStats.PreviousBufferUpdateCount = canvas.ActualUpdateCount;
-                        engineStats.WriteFrameTime = canvas.WriteFrameTime;
+                        engineStats.UpdateWithEngineStats(canvas.ActualUpdateCount, canvas.BufferUpdateCount, canvas.WriteFrameTime);
                     }
                 });
             };
